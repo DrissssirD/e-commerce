@@ -9,7 +9,7 @@ services:
       - "8000:8000"
     environment:
       # Database
-      - DATABASE_URL=postgresql://product_user:product_pass@postgres:5432/product_database
+      - DATABASE_URL=postgresql://product_user:product_pass@postgres-product:5432/product_database
       - POSTGRES_HOST=postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=product_database
@@ -23,7 +23,7 @@ services:
       - SERVICE_NAME=product-service
       - PORT=8000
     depends_on:
-      postgres:
+      postgres-product:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
 
   # PostgreSQL Database
-  postgres:
+  postgres-product:
     image: postgres:15-alpine
     container_name: product-postgres
     environment:
@@ -45,6 +45,7 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql  # ← NEW LINE!
     networks:
       - product-network
     healthcheck:
@@ -54,7 +55,7 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Elasticsearch for Product Search (using 7.x for better compatibility)
+  # Elasticsearch for Product Search
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.10
     container_name: product-elasticsearch

@@ -62,10 +62,10 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(SQLAlchemyError, sqlalchemy_exception_handler)
 app.add_exception_handler(Exception, general_exception_handler)
 
-# Register routes
-app.include_router(products.router, prefix="/api/products", tags=["Products"])
-app.include_router(categories.router, prefix="/api/categories", tags=["Categories"])
-app.include_router(product_reviews.router, prefix="/api/reviews", tags=["Product Reviews"])
+# Register routes - FIXED: removed .router since the imports ARE the routers
+app.include_router(products, prefix="/api/products", tags=["Products"])
+app.include_router(categories, prefix="/api/categories", tags=["Categories"])
+app.include_router(product_reviews, prefix="/api/reviews", tags=["Product Reviews"])
 
 # Event: On startup
 @app.on_event("startup")

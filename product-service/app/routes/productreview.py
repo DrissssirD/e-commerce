@@ -52,7 +52,7 @@ async def create_product_review(review: ProductReviewCreate, db: Session = Depen
         raise HTTPException(status_code=500, detail=f"Error creating review: {str(e)}")
 
 
-@router.get("/", response_model=List[ProductReviewResponse])
+@router.get("/")
 async def get_product_reviews(
     product_id: Optional[int] = None,
     user_uid: Optional[str] = None,
@@ -62,7 +62,7 @@ async def get_product_reviews(
     limit: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db)
 ):
-    """Get product reviews with filters"""
+    """Get product reviews with filters and pagination"""
     try:
         query = db.query(ProductReview).filter(ProductReview.deleted_at.is_(None))
         
@@ -81,8 +81,23 @@ async def get_product_reviews(
         # Order by most recent first
         query = query.order_by(ProductReview.created_at.desc())
         
+        # Get total count
+        total = query.count()
+        
+        # Get paginated reviews
         reviews = query.offset(skip).limit(limit).all()
-        return reviews
+        
+        # Calculate pagination metadata
+        total_pages = (total + limit - 1) // limit
+        current_page = (skip // limit) + 1
+        
+        return {
+            "items": [ProductReviewResponse.from_orm(r) for r in reviews],
+            "total": total,
+            "page": current_page,
+            "page_size": limit,
+            "total_pages": total_pages
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching reviews: {str(e)}")
 

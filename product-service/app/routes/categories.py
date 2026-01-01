@@ -28,7 +28,7 @@ async def create_category(category: CategoryCreate, db: Session = Depends(get_db
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error creating category: {str(e)}")
 
-@router.get("/", response_model=List[CategoryResponse])
+@router.get("/")
 async def get_categories(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
@@ -42,8 +42,23 @@ async def get_categories(
         if is_active is not None:
             query = query.filter(Category.is_active == is_active)
         
+        # Get total count
+        total = query.count()
+        
+        # Get paginated categories
         categories = query.offset(skip).limit(limit).all()
-        return categories
+        
+        # Calculate pagination metadata
+        total_pages = (total + limit - 1) // limit
+        current_page = (skip // limit) + 1
+        
+        return {
+            "items": [CategoryResponse.from_orm(c) for c in categories],
+            "total": total,
+            "page": current_page,
+            "page_size": limit,
+            "total_pages": total_pages
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching categories: {str(e)}")
 
